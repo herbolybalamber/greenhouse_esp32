@@ -2,22 +2,26 @@
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 
-// WiFi
-const char *ssid = "DIGI-K44j"; // Enter your Wi-Fi name
-const char *wifiPassword = "babocska";  // Enter Wi-Fi password
+String client_id = "sensorbox_696969";
 
-// MQTT Broker
+const int lightSensorPin = 34;
+int lightSensorValue = 0;
+
+// WiFi
+//const char *ssid = "DIGI-K44j"; // Enter your Wi-Fi name
+//const char *wifiPassword = "babocska";  // Enter Wi-Fi password
+
+const char *ssid = "Telekom-7416f0-2.4GHz"; // Enter your Wi-Fi name
+const char *wifiPassword = "QTM52YWAZNWK";  // Enter Wi-Fi password
+
 const char *mqtt_broker = "mqtt.dancs.org";
-const char *topic = "teszttopic";
+const char *topic = "sensorbox/696969/readings";
 const char *mqtt_username = "ESP32";
 const char *mqtt_password = "yOjFxF5f42Kjq2X";
 const int mqtt_port = 8883;
-
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
-
-const char* ca_cert =
-  "-----BEGIN CERTIFICATE-----\n"
+const char *ca_cert = "-----BEGIN CERTIFICATE-----\n"
   "MIIFFjCCAv6gAwIBAgIRAJErCErPDBinU/bWLiWnX1owDQYJKoZIhvcNAQELBQAw\n"
   "TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\n"
   "cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMjAwOTA0MDAwMDAw\n"
@@ -46,31 +50,27 @@ const char* ca_cert =
   "HlUjr8gRsI3qfJOQFy/9rKIJR0Y/8Omwt/8oTWgy1mdeHmmjk7j1nYsvC9JSQ6Zv\n"
   "MldlTTKB3zhThV1+XWYp6rjd5JW1zbVWEkLNxE7GJThEUG3szgBVGP7pSWTUTsqX\n"
   "nLRbwHOoq7hHwg==\n"
-  "-----END CERTIFICATE-----\n";
-
-
+                      "-----END CERTIFICATE-----\n";
 
 void setup_wifi() {
   delay(10);
-
   WiFi.begin(ssid, wifiPassword);
-
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 }
 
-void setup_mqtt(){
+void setup_mqtt() {
   espClient.setCACert(ca_cert);
   client.setServer(mqtt_broker, 8883);
   client.setCallback(callback);
 }
+
 
 void setup() {
     // Set software serial baud to 115200;
@@ -82,8 +82,7 @@ void setup() {
     client.setServer(mqtt_broker, mqtt_port);
     client.setCallback(callback);
     while (!client.connected()) {
-        String client_id = "esp32-client-";
-        client_id += String(WiFi.macAddress());
+        
         Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
         if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
             Serial.println("Public EMQX MQTT broker connected");
@@ -97,19 +96,36 @@ void setup() {
     client.publish(topic, "Hi, I'm ESP32 ^^");
     client.subscribe(topic);
 }
-
 void callback(char *topic, byte *payload, unsigned int length) {
-    Serial.print("Message arrived in topic: ");
-    Serial.println(topic);
-    Serial.print("Message:");
-    for (int i = 0; i < length; i++) {
-        Serial.print((char) payload[i]);
-    }
-    Serial.println();
-    Serial.println("-----------------------");
+  Serial.print("Message arrived in topic: ");
+  Serial.println(topic);
+  Serial.print("Message:");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+  Serial.println("-----------------------");
 }
 
-void loop() {
-    client.loop();
+void publishSensorData() {
+  // Read data from pin 34
+  lightSensorValue = analogRead(lightSensorPin);
 
+  // Create JSON string
+  String data = "{\"light\": " + String(lightSensorValue) + "}";
+
+  // Publish the data to the MQTT broker
+  client.publish(topic, data.c_str());
+}
+
+
+void loop() {
+  client.loop();
+
+  // Publish sensor data every 5 seconds
+  static unsigned long lastMillis = 0;
+  if (millis() - lastMillis >= 5000) {
+    publishSensorData();
+    lastMillis = millis();
+  }
 }
