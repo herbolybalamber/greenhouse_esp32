@@ -6,16 +6,20 @@ String client_id = "sensorbox_696969";
 
 const int lightSensorPin = 34;
 int lightSensorValue = 0;
+const int moistureSensorPin = 33;
+int moistureSensorValue = 0;
+
 
 // WiFi
-//const char *ssid = "DIGI-K44j"; // Enter your Wi-Fi name
-//const char *wifiPassword = "babocska";  // Enter Wi-Fi password
+const char *ssid = "DIGI-K44j"; // Enter your Wi-Fi name
+const char *wifiPassword = "babocska";  // Enter Wi-Fi password
 
-const char *ssid = "Telekom-7416f0-2.4GHz"; // Enter your Wi-Fi name
-const char *wifiPassword = "QTM52YWAZNWK";  // Enter Wi-Fi password
+//const char *ssid = "Telekom-7416f0-2.4GHz"; // Enter your Wi-Fi name
+//const char *wifiPassword = "QTM52YWAZNWK";  // Enter Wi-Fi password
 
 const char *mqtt_broker = "mqtt.dancs.org";
-const char *topic = "sensorbox/696969/readings";
+const char *topicPublish = "sensorbox/696969/readings";
+const char *topicSubscribe = "sensorbox/696969/command";
 const char *mqtt_username = "ESP32";
 const char *mqtt_password = "yOjFxF5f42Kjq2X";
 const int mqtt_port = 8883;
@@ -88,21 +92,22 @@ void setup() {
             Serial.println("Public EMQX MQTT broker connected");
         } else {
             Serial.print("failed with state ");
-            Serial.print(client.state());
+            Serial.println(client.state());
             delay(2000);
         }
     }
     // Publish and subscribe
-    client.publish(topic, "Hi, I'm ESP32 ^^");
-    client.subscribe(topic);
+    client.publish(topicPublish, "Hi, I'm ESP32 ^^");
+    client.subscribe(topicSubscribe);
 }
-void callback(char *topic, byte *payload, unsigned int length) {
+void callback(char *topicSubscribe, byte *payload, unsigned int length) {
   Serial.print("Message arrived in topic: ");
-  Serial.println(topic);
+  Serial.println(topicSubscribe);
   Serial.print("Message:");
   for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
   }
+
   Serial.println();
   Serial.println("-----------------------");
 }
@@ -110,13 +115,15 @@ void callback(char *topic, byte *payload, unsigned int length) {
 void publishSensorData() {
   // Read data from pin 34
   lightSensorValue = analogRead(lightSensorPin);
+  moistureSensorValue = analogRead(moistureSensorPin);
 
-  // Create JSON string
-  String data = "{\"light\": " + String(lightSensorValue) + "}";
+  // Create JSON string with both light and moisture values
+  String data = "{\"light\": " + String(lightSensorValue) + ", \"moisture\": " + String(moistureSensorValue) + "}";
 
   // Publish the data to the MQTT broker
-  client.publish(topic, data.c_str());
+  client.publish(topicPublish, data.c_str());
 }
+
 
 
 void loop() {
