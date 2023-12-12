@@ -8,52 +8,25 @@ const int lightSensorPin = 34;
 int lightSensorValue = 0;
 const int moistureSensorPin = 33;
 int moistureSensorValue = 0;
+const int ledPin = 27;
 
 
 // WiFi
-const char *ssid = "DIGI-K44j"; // Enter your Wi-Fi name
-const char *wifiPassword = "babocska";  // Enter Wi-Fi password
+const char *ssid = "wifi-ssid"; // Enter your Wi-Fi name
+const char *wifiPassword = "wifi-password";  // Enter Wi-Fi password
 
-//const char *ssid = "Telekom-7416f0-2.4GHz"; // Enter your Wi-Fi name
-//const char *wifiPassword = "QTM52YWAZNWK";  // Enter Wi-Fi password
 
-const char *mqtt_broker = "mqtt.dancs.org";
-const char *topicPublish = "sensorbox/696969/readings";
-const char *topicSubscribe = "sensorbox/696969/command";
-const char *mqtt_username = "ESP32";
-const char *mqtt_password = "yOjFxF5f42Kjq2X";
+
+const char *mqtt_broker = "mqtt-server-adress";
+const char *topicPublish = "topic-to-publish-in";
+const char *topicSubscribe = "topic-to-subsribe-to";
+const char *mqtt_username = "mqtt-server-username";
+const char *mqtt_password = "mqtt-server-password-";
 const int mqtt_port = 8883;
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
 const char *ca_cert = "-----BEGIN CERTIFICATE-----\n"
-  "MIIFFjCCAv6gAwIBAgIRAJErCErPDBinU/bWLiWnX1owDQYJKoZIhvcNAQELBQAw\n"
-  "TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\n"
-  "cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMjAwOTA0MDAwMDAw\n"
-  "WhcNMjUwOTE1MTYwMDAwWjAyMQswCQYDVQQGEwJVUzEWMBQGA1UEChMNTGV0J3Mg\n"
-  "RW5jcnlwdDELMAkGA1UEAxMCUjMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\n"
-  "AoIBAQC7AhUozPaglNMPEuyNVZLD+ILxmaZ6QoinXSaqtSu5xUyxr45r+XXIo9cP\n"
-  "R5QUVTVXjJ6oojkZ9YI8QqlObvU7wy7bjcCwXPNZOOftz2nwWgsbvsCUJCWH+jdx\n"
-  "sxPnHKzhm+/b5DtFUkWWqcFTzjTIUu61ru2P3mBw4qVUq7ZtDpelQDRrK9O8Zutm\n"
-  "NHz6a4uPVymZ+DAXXbpyb/uBxa3Shlg9F8fnCbvxK/eG3MHacV3URuPMrSXBiLxg\n"
-  "Z3Vms/EY96Jc5lP/Ooi2R6X/ExjqmAl3P51T+c8B5fWmcBcUr2Ok/5mzk53cU6cG\n"
-  "/kiFHaFpriV1uxPMUgP17VGhi9sVAgMBAAGjggEIMIIBBDAOBgNVHQ8BAf8EBAMC\n"
-  "AYYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMBMBIGA1UdEwEB/wQIMAYB\n"
-  "Af8CAQAwHQYDVR0OBBYEFBQusxe3WFbLrlAJQOYfr52LFMLGMB8GA1UdIwQYMBaA\n"
-  "FHm0WeZ7tuXkAXOACIjIGlj26ZtuMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcw\n"
-  "AoYWaHR0cDovL3gxLmkubGVuY3Iub3JnLzAnBgNVHR8EIDAeMBygGqAYhhZodHRw\n"
-  "Oi8veDEuYy5sZW5jci5vcmcvMCIGA1UdIAQbMBkwCAYGZ4EMAQIBMA0GCysGAQQB\n"
-  "gt8TAQEBMA0GCSqGSIb3DQEBCwUAA4ICAQCFyk5HPqP3hUSFvNVneLKYY611TR6W\n"
-  "PTNlclQtgaDqw+34IL9fzLdwALduO/ZelN7kIJ+m74uyA+eitRY8kc607TkC53wl\n"
-  "ikfmZW4/RvTZ8M6UK+5UzhK8jCdLuMGYL6KvzXGRSgi3yLgjewQtCPkIVz6D2QQz\n"
-  "CkcheAmCJ8MqyJu5zlzyZMjAvnnAT45tRAxekrsu94sQ4egdRCnbWSDtY7kh+BIm\n"
-  "lJNXoB1lBMEKIq4QDUOXoRgffuDghje1WrG9ML+Hbisq/yFOGwXD9RiX8F6sw6W4\n"
-  "avAuvDszue5L3sz85K+EC4Y/wFVDNvZo4TYXao6Z0f+lQKc0t8DQYzk1OXVu8rp2\n"
-  "yJMC6alLbBfODALZvYH7n7do1AZls4I9d1P4jnkDrQoxB3UqQ9hVl3LEKQ73xF1O\n"
-  "yK5GhDDX8oVfGKF5u+decIsH4YaTw7mP3GFxJSqv3+0lUFJoi5Lc5da149p90Ids\n"
-  "hCExroL1+7mryIkXPeFM5TgO9r0rvZaBFOvV2z0gp35Z0+L4WPlbuEjN/lxPFin+\n"
-  "HlUjr8gRsI3qfJOQFy/9rKIJR0Y/8Omwt/8oTWgy1mdeHmmjk7j1nYsvC9JSQ6Zv\n"
-  "MldlTTKB3zhThV1+XWYp6rjd5JW1zbVWEkLNxE7GJThEUG3szgBVGP7pSWTUTsqX\n"
-  "nLRbwHOoq7hHwg==\n"
+ 
                       "-----END CERTIFICATE-----\n";
 
 void setup_wifi() {
@@ -99,18 +72,36 @@ void setup() {
     // Publish and subscribe
     client.publish(topicPublish, "Hi, I'm ESP32 ^^");
     client.subscribe(topicSubscribe);
+
+pinMode(ledPin, OUTPUT);
 }
+
 void callback(char *topicSubscribe, byte *payload, unsigned int length) {
   Serial.print("Message arrived in topic: ");
   Serial.println(topicSubscribe);
-  Serial.print("Message:");
+  Serial.print("Message: ");
   for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
+  }
+ // Convert the payload to a string
+  String message = String((char*)payload);
+
+  // Check if the payload is exactly "lights_on"
+  if (message.equals("lights_on")) {
+    // Turn on the LED connected to pin D25
+    digitalWrite(ledPin, HIGH);
+    Serial.println("Lights are on");
+  }
+  else if (message.equals("lights_off")){
+    digitalWrite(ledPin, LOW);
+    Serial.println("Lights are off");
   }
 
   Serial.println();
   Serial.println("-----------------------");
 }
+
+
 
 void publishSensorData() {
   // Read data from pin 34
